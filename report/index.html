@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Keystone Phaser 2D client performance benchmark and multiplayer technology analysis for a 99-player game.">
+    <title>Keystone 99-Player Feasibility Report</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="ambient ambient-a"></div>
+    <div class="ambient ambient-b"></div>
+
+    <header class="site-header">
+        <a class="brand" href="#top" aria-label="Back to top">
+            <span class="brand-mark">K</span>
+            <span>Keystone Lab</span>
+        </a>
+        <nav aria-label="Main navigation">
+            <a href="#performance">Performance</a>
+            <a href="#network">Network</a>
+            <a href="#decision">Decision</a>
+            <a href="#roadmap">Roadmap</a>
+        </nav>
+        <button class="ghost-button" id="printReport" type="button">Export report</button>
+    </header>
+
+    <main id="top">
+        <section class="hero section-shell">
+            <div class="hero-copy reveal">
+                <p class="eyebrow">PHASER 4 · CLIENT BENCHMARK · 24 NOV 2026</p>
+                <h1>99 actors on screen.<br><span>The client is not the bottleneck.</span></h1>
+                <p class="hero-lead">Tests with 1, 10, 50 and 99 simulated Arcade Physics actors all sustained approximately 60 FPS. The remaining risk is authoritative server logic, state distribution and 99 real connections.</p>
+                <div class="hero-actions">
+                    <a class="primary-button" href="#performance">Explore the results</a>
+                    <a class="text-button" href="#recommendation">See the recommendation</a>
+                </div>
+            </div>
+            <div class="hero-panel reveal" aria-label="Key benchmark findings">
+                <div class="hero-orbit">
+                    <div class="orbit-ring orbit-ring-a"></div>
+                    <div class="orbit-ring orbit-ring-b"></div>
+                    <div class="hero-score">
+                        <strong>60.0</strong>
+                        <span>FPS @ 99 actors</span>
+                    </div>
+                </div>
+                <div class="signal-list">
+                    <div><span>1% Low</span><strong>59.6 FPS</strong></div>
+                    <div><span>Frame time</span><strong>16.66 ms</strong></div>
+                    <div><span>Client verdict</span><strong class="good">PASS</strong></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="metric-strip" aria-label="Summary metrics">
+            <article><span>Test levels</span><strong>4</strong><small>1 / 10 / 50 / 99</small></article>
+            <article><span>Sample per level</span><strong>5s</strong><small>plus 1s warm-up</small></article>
+            <article><span>Maximum actors</span><strong>99</strong><small>simple physics movement</small></article>
+            <article><span>Recommended server rate</span><strong>10–20Hz</strong><small>client renders at 60 FPS</small></article>
+        </section>
+
+        <section class="content-section section-shell" id="performance">
+            <div class="section-heading reveal">
+                <p class="eyebrow">01 · CLIENT PERFORMANCE</p>
+                <h2>Client performance benchmark</h2>
+                <p>Select an actor count to inspect the result. The test ran in a foreground Chrome tab on a 1024 × 768 canvas using the Vite development server.</p>
+            </div>
+
+            <div class="performance-grid">
+                <div class="chart-card reveal">
+                    <div class="card-header">
+                        <div>
+                            <p class="card-kicker">Average FPS</p>
+                            <h3>Frame rate remains flat as actors increase</h3>
+                        </div>
+                        <span class="status-chip">V-SYNC LIMITED</span>
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="fpsChart" aria-label="Average FPS by simulated actor count"></canvas>
+                    </div>
+                    <div class="chart-legend">
+                        <span><i class="legend-line"></i>Average FPS</span>
+                        <span><i class="legend-dash"></i>60 FPS target</span>
+                    </div>
+                </div>
+
+                <div class="inspector-card reveal">
+                    <div class="actor-tabs" role="tablist" aria-label="Select simulated actor count">
+                        <button class="actor-tab active" data-index="0" role="tab" aria-selected="true">1</button>
+                        <button class="actor-tab" data-index="1" role="tab" aria-selected="false">10</button>
+                        <button class="actor-tab" data-index="2" role="tab" aria-selected="false">50</button>
+                        <button class="actor-tab" data-index="3" role="tab" aria-selected="false">99</button>
+                    </div>
+                    <div class="actor-stage" id="actorStage" aria-hidden="true"></div>
+                    <div class="selected-metrics">
+                        <div><span>Simulated actors</span><strong id="selectedActors">1</strong></div>
+                        <div><span>Average FPS</span><strong id="selectedFps">60.2</strong></div>
+                        <div><span>1% Low</span><strong id="selectedLow">59.6</strong></div>
+                        <div><span>Frame time</span><strong id="selectedFrame">16.62 ms</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="callout reveal">
+                <div class="callout-icon">!</div>
+                <div>
+                    <h3>This does not prove that 99-player networking is ready</h3>
+                    <p>The benchmark measures rendering and simple Arcade Physics movement in one browser. It does not simulate WebSocket traffic, server game-loop work, latency, packet loss or 99 independent clients.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section dark-section" id="network">
+            <div class="section-shell">
+                <div class="section-heading reveal">
+                    <p class="eyebrow">02 · NETWORK MODEL</p>
+                    <h2>Where does a 99-player game create pressure?</h2>
+                    <p>Use a server-authoritative star architecture. Clients upload inputs, the server validates them and advances the canonical world, then distributes compact state changes.</p>
+                </div>
+
+                <div class="architecture-card reveal" aria-label="Server-authoritative networking flow">
+                    <div class="architecture-node clients-node">
+                        <span class="node-icon">01</span>
+                        <strong>Client input</strong>
+                        <small>direction · action · sequence</small>
+                    </div>
+                    <div class="flow-line"><span>10–20 Hz</span></div>
+                    <div class="architecture-node server-node">
+                        <span class="node-icon">02</span>
+                        <strong>Authoritative server</strong>
+                        <small>validate · simulate · resolve</small>
+                    </div>
+                    <div class="flow-line"><span>delta state</span></div>
+                    <div class="architecture-node render-node">
+                        <span class="node-icon">03</span>
+                        <strong>Client rendering</strong>
+                        <small>interpolate · predict · 60 FPS</small>
+                    </div>
+                </div>
+
+                <div class="network-grid">
+                    <article class="principle-card reveal">
+                        <span class="principle-number">A</span>
+                        <h3>Send inputs, not truth</h3>
+                        <p>Never trust client positions directly. Process sequenced inputs and enforce movement limits on the server to reduce cheating and divergence.</p>
+                    </article>
+                    <article class="principle-card reveal">
+                        <span class="principle-number">B</span>
+                        <h3>Update slowly, render smoothly</h3>
+                        <p>Start the server at 10–20 Hz while clients render at 60 FPS. A 100–150 ms interpolation buffer can smooth remote movement.</p>
+                    </article>
+                    <article class="principle-card reveal">
+                        <span class="principle-number">C</span>
+                        <h3>Synchronize only what matters</h3>
+                        <p>Use delta state, quantized coordinates and interest management instead of broadcasting the complete world every frame.</p>
+                    </article>
+                </div>
+
+                <div class="calculator-card reveal">
+                    <div class="calculator-copy">
+                        <p class="card-kicker">Traffic estimator</p>
+                        <h3>Naive full-broadcast bandwidth estimate</h3>
+                        <p>Estimates server egress when every player's state is sent to every other player. Protocol headers, retransmission and TLS overhead are excluded.</p>
+                    </div>
+                    <div class="calculator-controls">
+                        <label>
+                            <span>Players <output id="playersOutput">99</output></span>
+                            <input id="playersRange" type="range" min="1" max="99" value="99">
+                        </label>
+                        <label>
+                            <span>Update rate <output id="tickOutput">20 Hz</output></span>
+                            <input id="tickRange" type="range" min="5" max="30" step="5" value="20">
+                        </label>
+                        <label>
+                            <span>State per player <output id="bytesOutput">32 B</output></span>
+                            <input id="bytesRange" type="range" min="12" max="96" step="4" value="32">
+                        </label>
+                    </div>
+                    <div class="calculator-result">
+                        <span>Server state egress</span>
+                        <strong id="bandwidthResult">49.7 Mbps</strong>
+                        <small id="clientBandwidth">Each client receives about 0.50 Mbps</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section section-shell" id="decision">
+            <div class="section-heading reveal">
+                <p class="eyebrow">03 · TECHNOLOGY DECISION</p>
+                <h2>Multiplayer technology decision</h2>
+                <p>The goal is not the platform with the most features. It is the shortest path to a measurable 99-player prototype.</p>
+            </div>
+
+            <div class="recommendation" id="recommendation">
+                <div class="recommendation-main reveal">
+                    <span class="recommendation-label">RECOMMENDED</span>
+                    <h3>Colyseus + Node.js / TypeScript</h3>
+                    <p>The strongest match for the existing Phaser and TypeScript stack. Rooms, lifecycle hooks, matchmaking and schema-based delta synchronization are available out of the box, so the team can focus on game rules and player experience.</p>
+                    <ul>
+                        <li>Server-only authoritative state mutation</li>
+                        <li>Binary property-level delta patches</li>
+                        <li>Room capacity, reconnection and matchmaking</li>
+                        <li>Shared TypeScript types across the stack</li>
+                    </ul>
+                    <a class="primary-button" href="https://docs.colyseus.io/" target="_blank" rel="noreferrer">Read the official docs</a>
+                </div>
+                <div class="decision-score reveal">
+                    <div class="score-row"><span>Build speed</span><div><i style="--score: 94%"></i></div><strong>9.4</strong></div>
+                    <div class="score-row"><span>Project fit</span><div><i style="--score: 96%"></i></div><strong>9.6</strong></div>
+                    <div class="score-row"><span>Control</span><div><i style="--score: 88%"></i></div><strong>8.8</strong></div>
+                    <div class="score-row"><span>Ops burden</span><div><i style="--score: 72%"></i></div><strong>7.2</strong></div>
+                </div>
+            </div>
+
+            <div class="comparison-table-wrap reveal">
+                <table>
+                    <thead>
+                        <tr><th>Option</th><th>Best for</th><th>Strength</th><th>Main cost</th><th>Verdict</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr class="highlight-row"><td><strong>Colyseus</strong></td><td>TypeScript real-time games</td><td>Complete room and state model</td><td>Authoritative rules still required</td><td><span class="table-chip best">Recommended</span></td></tr>
+                        <tr><td><strong>Socket.IO</strong></td><td>General real-time events</td><td>Flexible, mature ecosystem</td><td>Game synchronization must be built</td><td><span class="table-chip">Alternative</span></td></tr>
+                        <tr><td><strong>Nakama</strong></td><td>Full game backend</td><td>Accounts, storage and matchmaking</td><td>Higher deployment and learning cost</td><td><span class="table-chip">Later stage</span></td></tr>
+                        <tr><td><strong>Raw WebSocket</strong></td><td>Fully custom protocols</td><td>Fine control, few dependencies</td><td>Reconnect, rooms and sync are custom</td><td><span class="table-chip warning">Not for v1</span></td></tr>
+                        <tr><td><strong>WebRTC P2P</strong></td><td>Small trusted groups</td><td>Can reduce central relay traffic</td><td>99-peer mesh and anti-cheat are poor fits</td><td><span class="table-chip warning">Not suitable</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="content-section roadmap-section" id="roadmap">
+            <div class="section-shell">
+                <div class="section-heading reveal">
+                    <p class="eyebrow">04 · VALIDATION ROADMAP</p>
+                    <h2>From rendering 99 actors to networking 99 players</h2>
+                    <p>The next phase requires a real server and staged headless-client load tests that record tick duration, CPU, memory, bandwidth and latency.</p>
+                </div>
+
+                <div class="roadmap-list">
+                    <article class="roadmap-item reveal">
+                        <div class="roadmap-marker"><span>01</span></div>
+                        <div><p>FOUNDATION</p><h3>Build an authoritative room</h3><span>Integrate Colyseus, process movement inputs on the server, synchronize positions and connect 2–4 real browsers first.</span></div>
+                        <strong>Prototype</strong>
+                    </article>
+                    <article class="roadmap-item reveal">
+                        <div class="roadmap-marker"><span>02</span></div>
+                        <div><p>LOAD TEST</p><h3>Simulate 1 / 10 / 50 / 99 connections</h3><span>Headless clients send inputs at a fixed rate. Record server tick p50 / p95 / max, CPU, memory and aggregate bandwidth.</span></div>
+                        <strong>Evidence</strong>
+                    </article>
+                    <article class="roadmap-item reveal">
+                        <div class="roadmap-marker"><span>03</span></div>
+                        <div><p>NETCODE</p><h3>Add interpolation and local prediction</h3><span>Emulate 50–150 ms latency and 1–5% packet loss. Validate remote smoothness, local response and server reconciliation.</span></div>
+                        <strong>Experience</strong>
+                    </article>
+                    <article class="roadmap-item reveal">
+                        <div class="roadmap-marker"><span>04</span></div>
+                        <div><p>OPTIMIZE</p><h3>Add delta sync and interest management</h3><span>Send only visible or relevant entities, compress fields and monitor egress bandwidth for each room.</span></div>
+                        <strong>Scale</strong>
+                    </article>
+                </div>
+
+                <div class="acceptance-grid reveal">
+                    <div><span>10 Hz tick budget</span><strong>&lt; 100 ms</strong></div>
+                    <div><span>20 Hz tick budget</span><strong>&lt; 50 ms</strong></div>
+                    <div><span>Target room capacity</span><strong>99 clients</strong></div>
+                    <div><span>Required percentiles</span><strong>p95 + max</strong></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section section-shell sources-section">
+            <div class="section-heading reveal">
+                <p class="eyebrow">05 · SOURCES & METHOD</p>
+                <h2>Data boundaries and sources</h2>
+            </div>
+            <div class="sources-grid">
+                <article class="source-card reveal"><span>01</span><h3>Colyseus State Sync</h3><p>The server mutates state and clients receive binary property-level changes.</p><a href="https://docs.colyseus.io/state" target="_blank" rel="noreferrer">Official documentation</a></article>
+                <article class="source-card reveal"><span>02</span><h3>Colyseus Rooms</h3><p>Room lifecycle, capacity, patch rate, reconnection and timestep configuration.</p><a href="https://docs.colyseus.io/room" target="_blank" rel="noreferrer">Official documentation</a></article>
+                <article class="source-card reveal"><span>03</span><h3>Socket.IO Scaling</h3><p>Multi-node broadcasting requires an adapter beyond the in-memory default.</p><a href="https://socket.io/docs/v4/adapter" target="_blank" rel="noreferrer">Official documentation</a></article>
+                <article class="source-card reveal"><span>04</span><h3>Nakama Authoritative</h3><p>Guidance for fixed-tick authoritative match loops and message handling.</p><a href="https://heroiclabs.com/docs/nakama/concepts/multiplayer/authoritative/" target="_blank" rel="noreferrer">Official documentation</a></article>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div><strong>Keystone 99 Player Feasibility</strong><span>Client benchmark + multiplayer architecture analysis</span></div>
+        <a href="#top">Back to top</a>
+    </footer>
+
+    <script src="./app.js"></script>
+</body>
+</html>
